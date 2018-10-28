@@ -283,7 +283,7 @@ class App:
 
 		outputResults = ""
 		found = False
-		for dataKey in data:
+		for dataKey in sorted(data):
 			if filterFeedback and queryFilter not in dataKey:
 				continue
 			found = True
