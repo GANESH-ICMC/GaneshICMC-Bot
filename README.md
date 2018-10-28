@@ -3,6 +3,7 @@ Este robô para Telegram possibilita que os membros e a coordenadoria do Ganesh 
 
 ## config.json
 Para pleno funcionamento, é necessário construir um arquivo config.json com a seguinte estrutura: <br>
+{ <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	- "subscribers": lista de canais que recebem os broadcasts; <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	- "authorized": lista de usuários do Telegram administradores; <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	- "interval": ?; <br>
