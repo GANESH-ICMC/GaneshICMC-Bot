@@ -10,6 +10,7 @@ import csv
 
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import ParseMode
+from collections import OrderedDict
 from io import StringIO
 
 
@@ -258,7 +259,7 @@ class App:
 				return
 
 		del csvLines[0] # Remove a coluna header
-		data = { }
+		data = OrderedDict()
 
 		for response in csvLines:
 			if not response[1] in data:
