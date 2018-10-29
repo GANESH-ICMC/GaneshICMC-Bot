@@ -308,10 +308,10 @@ class App:
 				outputResults += "<pre>" + subject.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") + "</pre>"
 			outputResults += "<em>Alguma observação ou sugestão de mudança?</em>\n"
 			if len(data[dataKey][5]) < 1:
-				outputResults += "\t(nada)\n"
+				outputResults += "\t(nada)"
 			for suggestion in data[dataKey][5]:
 				outputResults += "<pre>" + suggestion.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") + "</pre>"
-			outputResults += "\n"
+			outputResults += "\n\n"
 
 		if found:
 			bot.send_message(chat_id=message.chat_id, text=outputResults, parse_mode='HTML', disable_web_page_preview=True)
