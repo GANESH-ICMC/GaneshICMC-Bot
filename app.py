@@ -303,10 +303,10 @@ class App:
 				outputResults += "\t- " + review + ": " + str(data[dataKey][3][review]) + " (" + str(round(data[dataKey][3][review]*100/data[dataKey][0], 2)) + "%)\n"
 			outputResults += "<em>Algum assunto que gostaria para próximas atividades ou reuniões?</em>\n"
 			if len(data[dataKey][4]) < 1:
-				outputResults += "\t(nada)\n"
+				outputResults += "\t(nada)"
 			for subject in data[dataKey][4]:
 				outputResults += "<pre>" + subject.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") + "</pre>"
-			outputResults += "<em>Alguma observação ou sugestão de mudança?</em>\n"
+			outputResults += "\n<em>Alguma observação ou sugestão de mudança?</em>\n"
 			if len(data[dataKey][5]) < 1:
 				outputResults += "\t(nada)"
 			for suggestion in data[dataKey][5]:
