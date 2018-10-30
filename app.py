@@ -97,7 +97,7 @@ class App:
 		if authUser == 1:
 			msg += "\n__**Admin Only**__\n"
 			msg += "/bcast `Mensagem` - Manda a mensagem para todos os usuários inscritos.\n"
-			msg += "/bcast `Mensagem` - Manda a mensagem para todos os usuários inscritos e fixa (pin) ela.\n"
+			msg += "/pin `Mensagem` - Manda a mensagem para todos os usuários inscritos e fixa (pin) ela nos supergrupos.\n"
 			msg += "/members - Mostra estatísticas dos membros do Ganesh.\n"
 			msg += "/feedback `Filtro` - Mostra o feedback para a atividade filtrada (o filtro pode ser uma data, por exemplo).\n"
 			msg += "/auth `Username` - Autoriza o usuário com @ `Username` a mandar broadcast.\n"
@@ -218,8 +218,11 @@ class App:
 			bot.send_message(chat_id=message.chat_id, text="Usuário não autorizado :(")
 		else:
 			for subscriber in self.subscribers:
-				sentMessage = bot.send_message(chat_id=subscriber, text=sendMsg, parse_mode=ParseMode.MARKDOWN)
-				bot.pin_chat_message(chat_id=subscriber, message_id=sentMessage.message_id, disable_notification=False) # Só vai funcionar se o bot for adm do supergrupo.
+				try:
+					sentMessage = bot.send_message(chat_id=subscriber, text=sendMsg, parse_mode=ParseMode.MARKDOWN)
+					bot.pin_chat_message(chat_id=subscriber, message_id=sentMessage.message_id, disable_notification=False) # Só vai funcionar se o bot for adm do supergrupo.
+				except:
+					print("Erro ao mandar mensagem ou pinar ela.")
 
 	def members(self, bot, update): # Calcula o número de membros por curso e ano
 		message = update.message
