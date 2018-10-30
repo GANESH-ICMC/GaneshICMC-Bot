@@ -37,6 +37,7 @@ class App:
 		self.dispatcher.add_handler(CommandHandler('subscribe', self.subscribe))
 		self.dispatcher.add_handler(CommandHandler('unsubscribe', self.unsubscribe))
 		self.dispatcher.add_handler(CommandHandler('bcast', self.broadcast))
+		self.dispatcher.add_handler(CommandHandler('pin', self.pin))
 		self.dispatcher.add_handler(CommandHandler('feedback', self.feedback))
 		self.dispatcher.add_handler(CommandHandler('members', self.members))
 		self.dispatcher.add_handler(CommandHandler('auth', self.authorize))
@@ -96,6 +97,7 @@ class App:
 		if authUser == 1:
 			msg += "\n__**Admin Only**__\n"
 			msg += "/bcast `Mensagem` - Manda a mensagem para todos os usuários inscritos.\n"
+			msg += "/bcast `Mensagem` - Manda a mensagem para todos os usuários inscritos e fixa (pin) ela.\n"
 			msg += "/members - Mostra estatísticas dos membros do Ganesh.\n"
 			msg += "/feedback `Filtro` - Mostra o feedback para a atividade filtrada (o filtro pode ser uma data, por exemplo).\n"
 			msg += "/auth `Username` - Autoriza o usuário com @ `Username` a mandar broadcast.\n"
@@ -196,6 +198,28 @@ class App:
 		else:
 			for subscriber in self.subscribers:
 				bot.send_message(chat_id=subscriber, text=sendMsg, parse_mode=ParseMode.MARKDOWN)
+
+	def pin(self, bot, update):
+		# Gets message text and removes /broadcast command.
+		message = update.message
+		print(message)
+		try:
+			sendMsg = message.text.split(' ', 1)[1]
+		except:
+			bot.send_message(chat_id=message.chat_id, text="Saudades Parâmetros :(")
+			return
+		authSend = 0
+		print(message)
+
+		if message.from_user.username in self.authorized:
+			authSend = 1
+
+		if authSend == 0:
+			bot.send_message(chat_id=message.chat_id, text="Usuário não autorizado :(")
+		else:
+			for subscriber in self.subscribers:
+				sentMessage = bot.send_message(chat_id=subscriber, text=sendMsg, parse_mode=ParseMode.MARKDOWN)
+				bot.pin_chat_message(chat_id=subscriber, message_id=sentMessage.message_id, disable_notification=False) # Só vai funcionar se o bot for adm do supergrupo.
 
 	def members(self, bot, update): # Calcula o número de membros por curso e ano
 		message = update.message
