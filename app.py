@@ -86,15 +86,10 @@ class App:
 		msg += "/subscribe - Se inscreve para notificações do bot.\n"
 		msg += "/unsubscribe - Se desinscreve para notificações do bot.\n"
 		msg += "/help - Mostra essa mensagem.\n"
+
 		# Authorized users only:
-		authUser = 0
 		message = update.message
-
-		username = message.from_user.username
-		for username in self.authorized:
-			authUser = 1
-
-		if authUser == 1:
+		if message.from_user.username in self.authorized:
 			msg += "\n__**Admin Only**__\n"
 			msg += "/bcast `Mensagem` - Manda a mensagem para todos os usuários inscritos.\n"
 			msg += "/pin `Mensagem` - Manda a mensagem para todos os usuários inscritos e fixa (pin) ela nos supergrupos.\n"
@@ -119,18 +114,15 @@ class App:
 
 	def unsubscribe(self, bot, update):
 		chat_id = update.message.chat_id
-
 		with self.subscribersLock:
 			if(chat_id in self.subscribers):
 				self.subscribers.remove(chat_id)
 				self.save()
 				bot.send_message(chat_id=chat_id, text="Desinscrito com sucesso :(")
 				return
-
 			bot.send_message(chat_id=chat_id, text="Usuário não inscrito!")
 
 	def authorize(self, bot, update):
-		authUser = 0
 		message = update.message
 		try: 
 			toAuth = message.text.split(' ', 1)[1]
@@ -139,65 +131,52 @@ class App:
 			return
 
 		username = message.from_user.username
-		for auth in self.authorized:
-			if username == auth:
-				authUser = 1
-
-		if authUser == 0:			
-			bot.send_message(chat_id=message.chat_id, text="Usuário não autorizado :(")
-		else:
+		if username in self.authorized:			
 			if(toAuth in self.authorized):
 				bot.send_message(chat_id=message.chat_id, text="Já autorizado!")
 				return
 			self.authorized.add(toAuth)
 			self.save()
 			bot.send_message(chat_id=message.chat_id, text="Autorizado com sucesso!")
+		else:
+			bot.send_message(chat_id=message.chat_id, text="Usuário não autorizado :(")
 
 	def deAuthorize(self, bot, update):
 		message = update.message
 		username = message.from_user.username
-		#print (message)
-		authUser = 0
 		try:
 			toDeauth = message.text.split(' ', 1)[1]
 		except:
 			bot.send_message(chat_id=message.chat_id, text="Saudades Parâmetros :(")
 			return
 
-		for auth in self.authorized:
-			if username == auth:
-				authUser = 1
-
-		if authUser == 0:			
-			bot.send_message(chat_id=message.chat_id, text="Usuário não autorizado :(")
-		else:
+		if username in self.authorized:
 			if(toDeauth in self.authorized):
 				bot.send_message(chat_id=message.chat_id, text="Usuário removido com sucesso!")
 				self.authorized.remove(toDeauth)
 				self.save()
 			else:
 				bot.send_message(chat_id=message.chat_id, text="Usuário não estava na lista!")
+		else:
+			bot.send_message(chat_id=message.chat_id, text="Usuário não autorizado :(")
 
 	def broadcast(self, bot, update):
 		# Gets message text and removes /broadcast command.
 		message = update.message
-		print(message)
 		try:
 			sendMsg = message.text.split(' ', 1)[1]
 		except:
 			bot.send_message(chat_id=message.chat_id, text="Saudades Parâmetros :(")
 			return
-		authSend = 0
-		print(message)
 
 		if message.from_user.username in self.authorized:
-			authSend = 1
-
-		if authSend == 0:
-			bot.send_message(chat_id=message.chat_id, text="Usuário não autorizado :(")
-		else:
 			for subscriber in self.subscribers:
-				bot.send_message(chat_id=subscriber, text=sendMsg, parse_mode=ParseMode.MARKDOWN)
+				try:
+					bot.send_message(chat_id=subscriber, text=sendMsg, parse_mode=ParseMode.MARKDOWN)
+				except:
+					print("Erro ao mandar mensagem. Talvez o chat_id não exista mais/mudou?")
+		else:
+			bot.send_message(chat_id=message.chat_id, text="Usuário não autorizado :(")
 
 	def pin(self, bot, update):
 		# Gets message text and removes /broadcast command.
@@ -208,21 +187,17 @@ class App:
 		except:
 			bot.send_message(chat_id=message.chat_id, text="Saudades Parâmetros :(")
 			return
-		authSend = 0
 		print(message)
 
 		if message.from_user.username in self.authorized:
-			authSend = 1
-
-		if authSend == 0:
-			bot.send_message(chat_id=message.chat_id, text="Usuário não autorizado :(")
-		else:
 			for subscriber in self.subscribers:
 				try:
 					sentMessage = bot.send_message(chat_id=subscriber, text=sendMsg, parse_mode=ParseMode.MARKDOWN)
 					bot.pin_chat_message(chat_id=subscriber, message_id=sentMessage.message_id, disable_notification=False) # Só vai funcionar se o bot for adm do supergrupo.
 				except:
-					print("Erro ao mandar mensagem ou pinar ela.")
+					print("Erro ao mandar mensagem ou pinar ela. Talvez o chat_id não exista mais/mudou? Ou então o bot não enviou para um supergrupo? Ou ele não é adm?")
+		else:
+			bot.send_message(chat_id=message.chat_id, text="Usuário não autorizado :(")
 
 	def members(self, bot, update): # Calcula o número de membros por curso e ano
 		message = update.message
