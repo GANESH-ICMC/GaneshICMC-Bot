@@ -370,12 +370,12 @@ class App:
 					outputResults[0] += " [" + date + "]"
 				outputResults[0] += "</strong>\n\n"
 			found = True
-			userOutput = "<pre>" + member + ": " + str(members[member][0]) + " " + str(members[member][1]) + " " + str(members[member][2]) + " ("
+			userOutput = member + ": " + str(members[member][0]) + " " + str(members[member][1]) + " " + str(members[member][2]) + " ("
 			userOutput += str(round(members[member][0] * 100 / (members[member][0] + members[member][1] + members[member][2]), 2)) + "% "
 			userOutput += str(round((members[member][0] + members[member][1]) * 100 / (members[member][0] + members[member][1] + members[member][2]), 2)) + "%) ->"
 			for freq in members[member][3]:
 				userOutput += " " + freq
-			userOutput += "</pre>"
+			userOutput += "\n"
 			if len(outputResults[len(outputResults) - 1]) + len(userOutput) > 4050:
 				outputResults.append(userOutput)
 			else:
