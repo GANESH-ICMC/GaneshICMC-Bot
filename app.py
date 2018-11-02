@@ -40,6 +40,8 @@ class App:
 		self.dispatcher.add_handler(CommandHandler('pin', self.pin))
 		self.dispatcher.add_handler(CommandHandler('feedback', self.feedback))
 		self.dispatcher.add_handler(CommandHandler('members', self.members))
+		self.dispatcher.add_handler(CommandHandler('freq', self.freq))
+		self.dispatcher.add_handler(CommandHandler('freqr', self.freqr))
 		self.dispatcher.add_handler(CommandHandler('auth', self.authorize))
 		self.dispatcher.add_handler(CommandHandler('deauth', self.deAuthorize))
 		#self.dispatcher.add_handler(CommandHandler('upcoming', self.upcoming))
@@ -59,6 +61,7 @@ class App:
 			self.key = o['key']
 			self.membersDriveLink = o['membersDriveLink']
 			self.feedbackDriveLink = o['feedbackDriveLink']
+			self.frequencyDriveLink = o['frequencyDriveLink']
 
 	def save(self):
 		with open('config.json', 'w') as f:
@@ -69,13 +72,14 @@ class App:
 				'key': self.key,
 				'membersDriveLink': self.membersDriveLink,
 				'feedbackDriveLink': self.feedbackDriveLink,
+				'frequencyDriveLink': self.frequencyDriveLink,
 			}, f, indent=4)
 
 	def run(self):
 		self.updater.start_polling()
 
 	def start(self, bot, update):
-		msg = "Bem vindo ao Ganesh Bot \o/\n"
+		msg = "Bem vindo ao Ganesh Bot \\o/\n"
 		msg += "Digite /help para uma lista de funcionalidades."
 		bot.send_message(chat_id=update.message.chat_id, text=msg)
 
@@ -95,6 +99,8 @@ class App:
 			msg += "/pin `Mensagem` - Manda a mensagem para todos os usuários inscritos e fixa (pin) ela nos supergrupos.\n"
 			msg += "/members - Mostra estatísticas dos membros do Ganesh.\n"
 			msg += "/feedback `Filtro` - Mostra o feedback para a atividade filtrada (o filtro pode ser uma data, por exemplo).\n"
+			msg += "/freq `Filtro` - Mostra a frequência nas reuniões para o membro filtrado (o filtro pode ser parte do nome, por exemplo).\n"
+			msg += "/freqr `Filtro` - Mostra estatísticas de frequência para a reunião filtrada (o filtro pode ser uma data, por exemplo).\n"
 			msg += "/auth `Username` - Autoriza o usuário com @ `Username` a mandar broadcast.\n"
 			msg += "/deauth `Username` - Desautoriza o usuário com @ `Username` a mandar broadcast.\n"
 
@@ -173,7 +179,8 @@ class App:
 			for subscriber in self.subscribers:
 				try:
 					bot.send_message(chat_id=subscriber, text=sendMsg, parse_mode=ParseMode.MARKDOWN)
-				except:
+				except Exception as exc:
+					print(exc)
 					print("Erro ao mandar mensagem. Talvez o chat_id não exista mais/mudou?")
 		else:
 			bot.send_message(chat_id=message.chat_id, text="Usuário não autorizado :(")
@@ -181,20 +188,19 @@ class App:
 	def pin(self, bot, update):
 		# Gets message text and removes /broadcast command.
 		message = update.message
-		print(message)
 		try:
 			sendMsg = message.text.split(' ', 1)[1]
 		except:
 			bot.send_message(chat_id=message.chat_id, text="Saudades Parâmetros :(")
 			return
-		print(message)
 
 		if message.from_user.username in self.authorized:
 			for subscriber in self.subscribers:
 				try:
 					sentMessage = bot.send_message(chat_id=subscriber, text=sendMsg, parse_mode=ParseMode.MARKDOWN)
 					bot.pin_chat_message(chat_id=subscriber, message_id=sentMessage.message_id, disable_notification=False) # Só vai funcionar se o bot for adm do supergrupo.
-				except:
+				except Exception as exc:
+					print(exc)
 					print("Erro ao mandar mensagem ou pinar ela. Talvez o chat_id não exista mais/mudou? Ou então o bot não enviou para um supergrupo? Ou ele não é adm?")
 		else:
 			bot.send_message(chat_id=message.chat_id, text="Usuário não autorizado :(")
@@ -284,45 +290,175 @@ class App:
 			if response[6]:
 				data[response[1]][5].append(response[6])
 
-		outputResults = ""
+		outputResults = [""]
 		found = False
 		for dataKey in data:
 			if filterFeedback and queryFilter not in dataKey:
 				continue
 			found = True
-			outputResults += "<strong>== " + dataKey + ": " + str(data[dataKey][0]) + " feedbacks recebidos ==</strong>\n"
-			outputResults += "<em>Gostou do tema da atividade?</em>\n"
+			feedbackOutput = "<strong>== " + dataKey + ": " + str(data[dataKey][0]) + " feedbacks recebidos ==</strong>\n"
+			feedbackOutput += "<em>Gostou do tema da atividade?</em>\n"
 			for liked in sorted(data[dataKey][1]):
-				outputResults += "\t- " + liked + ": " + str(data[dataKey][1][liked]) + " (" + str(round(data[dataKey][1][liked]*100/data[dataKey][0], 2)) + "%)\n"
-			outputResults += "<em>O quanto você entendeu do assunto?</em>\n"
+				feedbackOutput += "\t- " + liked + ": " + str(data[dataKey][1][liked]) + " (" + str(round(data[dataKey][1][liked]*100/data[dataKey][0], 2)) + "%)\n"
+			feedbackOutput += "<em>O quanto você entendeu do assunto?</em>\n"
 			scoreSum = 0
 			for score in sorted(data[dataKey][2]):
-				outputResults += "\t- " + score + "/5: " + str(data[dataKey][2][score]) + " (" + str(round(data[dataKey][2][score]*100/data[dataKey][0], 2)) + "%)\n"
+				feedbackOutput += "\t- " + score + "/5: " + str(data[dataKey][2][score]) + " (" + str(round(data[dataKey][2][score]*100/data[dataKey][0], 2)) + "%)\n"
 				scoreSum += int(score) * data[dataKey][2][score]
-			outputResults += "\t- média: " + str(round(scoreSum/data[dataKey][0], 1)) + "/5\n"
-			outputResults += "<em>Vale a pena revisar o assunto em reuniões futuras?</em>\n"
+			feedbackOutput += "\t- média: " + str(round(scoreSum/data[dataKey][0], 1)) + "/5\n"
+			feedbackOutput += "<em>Vale a pena revisar o assunto em reuniões futuras?</em>\n"
 			for review in sorted(data[dataKey][3]):
-				outputResults += "\t- " + review + ": " + str(data[dataKey][3][review]) + " (" + str(round(data[dataKey][3][review]*100/data[dataKey][0], 2)) + "%)\n"
-			outputResults += "<em>Algum assunto que gostaria para próximas atividades ou reuniões?</em>\n"
+				feedbackOutput += "\t- " + review + ": " + str(data[dataKey][3][review]) + " (" + str(round(data[dataKey][3][review]*100/data[dataKey][0], 2)) + "%)\n"
+			feedbackOutput += "<em>Algum assunto que gostaria para próximas atividades ou reuniões?</em>\n"
 			if len(data[dataKey][4]) < 1:
-				outputResults += "\t(nada)"
+				feedbackOutput += "\t(nada)"
 			for subject in data[dataKey][4]:
-				outputResults += "<pre>" + subject.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") + "</pre>"
-			outputResults += "\n<em>Alguma observação ou sugestão de mudança?</em>\n"
+				feedbackOutput += "<pre>" + subject.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") + "</pre>"
+			feedbackOutput += "\n<em>Alguma observação ou sugestão de mudança?</em>\n"
 			if len(data[dataKey][5]) < 1:
-				outputResults += "\t(nada)"
+				feedbackOutput += "\t(nada)"
 			for suggestion in data[dataKey][5]:
-				outputResults += "<pre>" + suggestion.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") + "</pre>"
-			outputResults += "\n\n"
+				feedbackOutput += "<pre>" + suggestion.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") + "</pre>"
+			feedbackOutput += "\n\n"
+			if len(outputResults[len(outputResults) - 1]) + len(feedbackOutput) > 4050:
+				outputResults.append(feedbackOutput)
+			else:
+				outputResults[len(outputResults) - 1] += feedbackOutput
 
 		if found:
-			bot.send_message(chat_id=message.chat_id, text=outputResults, parse_mode='HTML', disable_web_page_preview=True)
+			for string in outputResults: # Envia as mensagens separadamente pq não pode estrapolar o limite de 4096 caracteres
+				bot.send_message(chat_id=message.chat_id, text=string, parse_mode='HTML', disable_web_page_preview=True)
+		elif filterFeedback:
+			bot.send_message(chat_id=message.chat_id, text="Nada encontrado com <strong>" + queryFilter.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") + "</strong> :(", parse_mode='HTML', disable_web_page_preview=True)
 		else:
-			if queryFilter is not None:
-				bot.send_message(chat_id=message.chat_id, text="Nada encontrado com <strong>" + queryFilter.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") + "</strong> :(", parse_mode='HTML', disable_web_page_preview=True)
-			else:
-				bot.send_message(chat_id=message.chat_id, text="Nada encontrado :(")
+			bot.send_message(chat_id=message.chat_id, text="Nada encontrado :(")
 
+	def freq(self, bot, update): # Calcula a frequência dos membros
+		message = update.message
+		messageList = message.text.split(' ', 1)
+		filterFrequency = False
+		if len(messageList) > 1:
+			queryFilter = messageList[1]
+			filterFrequency = True
+
+		if not message.from_user.username in self.authorized:
+			bot.send_message(chat_id=message.chat_id, text="Usuário não autorizado :(")
+			return
+
+		try:
+			with StringIO(urllib.request.urlopen(self.frequencyDriveLink).read().decode('utf-8')) as mStream:
+				csvOutput = csv.reader(mStream, delimiter=CSV_COMMA)
+				csvLines = list(csvOutput)
+		except Exception as exc:
+				print(exc)
+				bot.send_message(chat_id=message.chat_id, text="Poxa, não consegui baixar a tabela do Drive :(")
+				return
+
+		members = { }
+
+		for member in csvLines[2:]:
+			members[member[1]] = [int(member[2]), int(member[4]), int(member[5]), member[8:]]
+
+		outputResults = [""]
+		found = False
+		for member in sorted(members):
+			if filterFrequency and queryFilter not in member:
+				continue
+			if not found:
+				outputResults[0] += "<strong>[NOME]: [N_PRESENÇAS] [N_JUSTIFICATIVAS] [N_FALTAS] ([%PRESENTE] [%JUSTIFICADO]) ->"
+				for date in csvLines[0][8:]:
+					outputResults[0] += " [" + date + "]"
+				outputResults[0] += "</strong>\n\n"
+			found = True
+			userOutput = "<pre>" + member + ": " + str(members[member][0]) + " " + str(members[member][1]) + " " + str(members[member][2]) + " ("
+			userOutput += str(round(members[member][0] * 100 / (members[member][0] + members[member][1] + members[member][2]), 2)) + "% "
+			userOutput += str(round((members[member][0] + members[member][1]) * 100 / (members[member][0] + members[member][1] + members[member][2]), 2)) + "%) ->"
+			for freq in members[member][3]:
+				userOutput += " " + freq
+			userOutput += "</pre>"
+			if len(outputResults[len(outputResults) - 1]) + len(userOutput) > 4050:
+				outputResults.append(userOutput)
+			else:
+				outputResults[len(outputResults) - 1] += userOutput
+			
+
+		if found:
+			for string in outputResults: # Envia as mensagens separadamente pq não pode estrapolar o limite de 4096 caracteres
+				bot.send_message(chat_id=message.chat_id, text=string, parse_mode='HTML')
+		elif filterFrequency:
+			bot.send_message(chat_id=message.chat_id, text="Nada encontrado com <strong>" + queryFilter.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") + "</strong> :(", parse_mode='HTML', disable_web_page_preview=True)
+		else:
+			bot.send_message(chat_id=message.chat_id, text="Nada encontrado :(")
+
+	def freqr(self, bot, update): # Calcula a frequência das reuniões
+		message = update.message
+		messageList = message.text.split(' ', 1)
+		filterFrequency = False
+		if len(messageList) > 1:
+			queryFilter = messageList[1]
+			filterFrequency = True
+
+		if not message.from_user.username in self.authorized:
+			bot.send_message(chat_id=message.chat_id, text="Usuário não autorizado :(")
+			return
+
+		try:
+			with StringIO(urllib.request.urlopen(self.frequencyDriveLink).read().decode('utf-8')) as mStream:
+				csvOutput = csv.reader(mStream, delimiter=CSV_COMMA)
+				csvLines = list(csvOutput)
+		except Exception as exc:
+				print(exc)
+				bot.send_message(chat_id=message.chat_id, text="Poxa, não consegui baixar a tabela do Drive :(")
+				return
+
+		data = OrderedDict()
+
+		for member in csvLines[2:]:
+			for dateKey in range(8, len(csvLines[0])):
+				if not csvLines[0][dateKey] in data:
+					data[csvLines[0][dateKey]] = [[], [], []]
+				if member[dateKey] == 'P':
+					data[csvLines[0][dateKey]][0].append(member[1])
+				elif member[dateKey] == 'J':
+					data[csvLines[0][dateKey]][1].append(member[1])
+				else:
+					data[csvLines[0][dateKey]][2].append(member[1])
+
+		outputResults = [""]
+		found = False
+		for date in data:
+			if filterFrequency and queryFilter not in date:
+				continue
+			if not found:
+				outputResults[0] += "<strong>== Total de membros: " + str(len(data[date][0]) + len(data[date][1]) + len(data[date][2])) + " ==</strong>\n\n"
+			found = True
+			frequencyOutput = "<strong>== " + date + " ==</strong>\n"
+			frequencyOutput += "\tPresenças: " + str(len(data[date][0])) + " (" + str(round(len(data[date][0])*100/(len(data[date][0]) + len(data[date][1]) + len(data[date][2])), 2)) + "%)\n"
+			frequencyOutput += "\tJustificativas: " + str(len(data[date][1])) + " (" + str(round(len(data[date][1])*100/(len(data[date][0]) + len(data[date][1]) + len(data[date][2])), 2)) + "%)\n"
+			frequencyOutput += "\tPresenças contabilizadas: " + str(len(data[date][0]) + len(data[date][1])) + " (" + str(round((len(data[date][0]) + len(data[date][1]))*100/(len(data[date][0]) + len(data[date][1]) + len(data[date][2])), 2)) + "%)\n"
+			frequencyOutput += "\tFaltas: " + str(len(data[date][2])) + " (" + str(round(len(data[date][2])*100/(len(data[date][0]) + len(data[date][1]) + len(data[date][2])), 2)) + "%)\n"
+			frequencyOutput += "\tPresentes:\n<pre>"
+			frequencyOutput += sorted(data[date][0])[0]
+			for member in sorted(data[date][0])[1:]:
+				frequencyOutput += ", " + member
+			frequencyOutput += "</pre>\n\tJustificaram:\n<pre>"
+			frequencyOutput += sorted(data[date][1])[0]
+			for member in sorted(data[date][1])[1:]:
+				frequencyOutput += ", " + member
+			frequencyOutput += "</pre>\n\n"
+			if len(outputResults[len(outputResults) - 1]) + len(frequencyOutput) > 4050:
+				outputResults.append(frequencyOutput)
+			else:
+				outputResults[len(outputResults) - 1] += frequencyOutput
+			
+
+		if found:
+			for string in outputResults: # Envia as mensagens separadamente pq não pode estrapolar o limite de 4096 caracteres
+				bot.send_message(chat_id=message.chat_id, text=string, parse_mode='HTML')
+		elif filterFrequency:
+			bot.send_message(chat_id=message.chat_id, text="Nada encontrado com <strong>" + queryFilter.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") + "</strong> :(", parse_mode='HTML', disable_web_page_preview=True)
+		else:
+			bot.send_message(chat_id=message.chat_id, text="Nada encontrado :(")
 
 	# CTF Functionalities, to be done in the future.
 
