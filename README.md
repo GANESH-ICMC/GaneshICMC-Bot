@@ -9,5 +9,6 @@ Para pleno funcionamento, é necessário construir um arquivo config.json com a 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	- "interval": ?; <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	- "key": chave da Telegram API; <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	- "membersDriveLink": link do Google Drive para download da tabela CSV dos membros do Ganesh (formato: https://docs.google.com/spreadsheet/ccc?output=csv&key=FORM-KEY]); <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	- "feedbackDriveLink": link do Google Drive para download da tabela CSV dos Feedbacks recebidos (formato: https://docs.google.com/spreadsheet/ccc?output=csv&key=FORM-KEY]). <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	- "feedbackDriveLink": link do Google Drive para download da tabela CSV dos Feedbacks recebidos (formato: https://docs.google.com/spreadsheet/ccc?output=csv&key=FORM-KEY]); <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	- "frequencyDriveLink": link do Google Drive para download da tabela CSV das frequências dos membros (formato: https://docs.google.com/spreadsheet/ccc?output=csv&key=FORM-KEY]). <br>
 }
